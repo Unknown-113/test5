@@ -1,0 +1,118 @@
+########################################
+# SERVER
+########################################
+
+- hosts: api-vm
+  become: yes
+
+  tasks:
+
+    - name: Install python + pip
+      apt:
+        name: python3-pip
+        update_cache: yes
+
+    - name: Install flask
+      pip:
+        name: flask
+
+    - name: Copy API
+      copy:
+        dest: /root/api.py
+        content: |
+          from flask import Flask, jsonify
+          import random,time
+
+          app = Flask(__name__)
+
+          flag="FLAG0"
+          t=0
+
+          def getflag():
+              global flag,t
+              if time.time()-t>30:
+                  flag="FLAG_"+str(random.randint(1000,9999))
+                  t=time.time()
+              return flag
+
+          @app.route("/flag/user")
+          def f():
+              return jsonify({"flag":getflag()})
+
+          if __name__=="__main__":
+              app.run(host="0.0.0.0",port=8000)
+
+    - name: Run API
+      shell: nohup python3 /root/api.py &
+      async: 5
+      poll: 0
+
+
+
+########################################
+# STUDENT
+########################################
+
+- hosts: student-vm
+  become: yes
+
+  tasks:
+
+    - name: Create user
+      user:
+        name: user
+        shell: /bin/bash
+        create_home: yes
+        password: "{{ 'user' | password_hash('sha512') }}"
+
+
+    - name: Install SSH
+      apt:
+        name: openssh-server
+        update_cache: yes
+
+
+    - name: Enable password login
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PasswordAuthentication'
+        line: 'PasswordAuthentication yes'
+
+
+    - name: Restart SSH
+      service:
+        name: ssh
+        state: restarted
+        enabled: yes
+
+
+    #################################
+    # LAB FOLDER
+    #################################
+
+    - name: Create lab folder
+      file:
+        path: /home/user/lab
+        state: directory
+        owner: user
+        group: user
+
+
+    #################################
+    # CALL API
+    #################################
+
+    - name: Get flag from API
+      uri:
+        url: http://10.10.20.10:8000/flag/user
+        method: GET
+        return_content: yes
+      register: api_result
+
+
+    - name: Write flag
+      copy:
+        content: "{{ api_result.json.flag }}"
+        dest: /home/user/lab/key.txt
+        owner: user
+        group: user
