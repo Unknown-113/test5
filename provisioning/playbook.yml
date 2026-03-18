@@ -1,94 +1,69 @@
 ########################################
-# SERVER
+# SERVER (api-vm)
 ########################################
-
 - hosts: api-vm
   become: yes
-
   tasks:
-
     - name: Install python + pip
       apt:
-        name: python3-pip
+        name: 
+          - python3-pip
+          - python3-flask
         update_cache: yes
 
-    - name: Install flask
-      pip:
-        name: flask
-
-    - name: Copy API
+    - name: Copy API with Verification Logic
       copy:
         dest: /root/api.py
         content: |
-          from flask import Flask, jsonify
-          import random,time
+          from flask import Flask, jsonify, request
+          import hashlib
+          import time
 
           app = Flask(__name__)
+          SECRET = "kypo-secret-key"
+          STATIC_PASSKEY = "FINISH_LAB_99"
 
-          flag="FLAG0"
-          t=0
+          def generate_valid_flags():
+              # Cho phép flag hiện tại và flag của 1 phút trước (tránh lệch giây)
+              t_now = int(time.time() / 60)
+              flags = []
+              for t in [t_now, t_now - 1]:
+                  raw = f"{t}-{SECRET}"
+                  h = hashlib.md5(raw.encode()).hexdigest()[:8]
+                  flags.append(f"FLAG_{h}")
+              return flags
 
-          def getflag():
-              global flag,t
-              if time.time()-t>30:
-                  flag="FLAG_"+str(random.randint(1000,9999))
-                  t=time.time()
-              return flag
+          @app.route("/get_flag")
+          def get_flag():
+              # Trả về flag hiện tại để ghi vào file key.txt
+              return jsonify({"flag": generate_valid_flags()[0]})
 
-          @app.route("/flag/user")
-          def f():
-              return jsonify({"flag":getflag()})
+          @app.route("/verify/<answer>")
+          def verify(answer):
+              if answer in generate_valid_flags():
+                  return jsonify({"status": "correct", "passkey": STATIC_PASSKEY})
+              return jsonify({"status": "wrong"}), 400
 
-          if __name__=="__main__":
-              app.run(host="0.0.0.0",port=8000)
+          if __name__ == "__main__":
+              app.run(host="0.0.0.0", port=8000)
 
     - name: Run API
       shell: nohup python3 /root/api.py &
-      async: 5
+      async: 10
       poll: 0
 
-
-
 ########################################
-# STUDENT
+# STUDENT (student-vm)
 ########################################
-
 - hosts: student-vm
   become: yes
-
   tasks:
-
     - name: Create user
       user:
         name: user
         shell: /bin/bash
         create_home: yes
         password: "{{ 'user' | password_hash('sha512') }}"
-
-
-    - name: Install SSH
-      apt:
-        name: openssh-server
-        update_cache: yes
-
-
-    - name: Enable password login
-      lineinfile:
-        path: /etc/ssh/sshd_config
-        regexp: '^PasswordAuthentication'
-        line: 'PasswordAuthentication yes'
-
-
-    - name: Restart SSH
-      service:
-        name: ssh
-        state: restarted
-        enabled: yes
-
-
-    #################################
-    # LAB FOLDER
-    #################################
 
     - name: Create lab folder
       file:
@@ -97,22 +72,35 @@
         owner: user
         group: user
 
-
-    #################################
-    # CALL API
-    #################################
-
-    - name: Get flag from API
+    - name: Get initial flag from API to file
       uri:
-        url: http://10.10.20.10:8000/flag/user
+        url: http://10.10.20.10:8000/get_flag
         method: GET
         return_content: yes
       register: api_result
+      until: api_result.status == 200
+      retries: 5
+      delay: 5
 
-
-    - name: Write flag
+    - name: Write flag to key.txt
       copy:
         content: "{{ api_result.json.flag }}"
         dest: /home/user/lab/key.txt
         owner: user
         group: user
+
+    - name: Create submit_flag script
+      copy:
+        dest: /usr/local/bin/submit_flag
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          read -p "Nhap Flag ban tim duoc: " USER_FLAG
+          RESPONSE=$(curl -s http://10.10.20.10:8000/verify/$USER_FLAG)
+          if [[ $RESPONSE == *"correct"* ]]; then
+              PASSKEY=$(echo $RESPONSE | grep -oP '(?<="passkey":")[^"]*')
+              echo -e "\e[32m[+] Chinh xac!\e[0m"
+              echo -e "Ma hoan thanh bai lab cua ban la: \e[1;33m$PASSKEY\e[0m"
+          else
+              echo -e "\e[31m[-] Sai roi! Hay kiem tra lai flag hoac thoi gian.\e[0m"
+          fi
