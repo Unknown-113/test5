@@ -11,7 +11,7 @@
           - python3-flask
         update_cache: yes
 
-    - name: Copy API Logic (Fix Flask)
+    - name: Copy API Logic (Aligned with Java)
       copy:
         dest: /root/api.py
         content: |
@@ -19,34 +19,23 @@
           import hashlib, time
 
           app = Flask(__name__)
-          SECRET = "kypo-secret-key"
-          STATIC_PASSKEY = "FINISH_LAB_TEST"
+          SECRET = "KYPO_OJT_SECRET_2026" 
 
-          def generate_valid_flags():
+          def generate_current_flag():
               t_now = int(time.time() / 60)
-              flags = []
-              # Allow flags for current and previous minute to avoid sync issues
-              for t in [t_now, t_now - 1]:
-                  raw = f"{t}-{SECRET}"
-                  h = hashlib.md5(raw.encode()).hexdigest()[:8]
-                  flags.append(f"FLAG_{h}")
-              return flags
+              raw = f"{SECRET}:{t_now}"
+              h = hashlib.md5(raw.encode()).hexdigest()[:8]
+              return f"FLAG_{h}"
 
           @app.route("/get_flag")
           def get_flag():
-              return jsonify({"flag": generate_valid_flags()[0]})
-
-          @app.route("/verify/<answer>")
-          def verify(answer):
-              if answer in generate_valid_flags():
-                  return jsonify({"status": "correct", "passkey": STATIC_PASSKEY})
-              return jsonify({"status": "wrong"}), 400
+              return jsonify({"flag": generate_current_flag()})
 
           if __name__ == "__main__":
               app.run(host="0.0.0.0", port=8000)
 
     - name: Run API in background
-      shell: "nohup python3 /root/api.py > /dev/null 2>&1 &"
+      shell: "pkill -f api.py || true; nohup python3 /root/api.py > /dev/null 2>&1 &"
       async: 10
       poll: 0
 
@@ -61,21 +50,21 @@
         name: curl
         update_cache: yes
 
-    - name: Create lab user
+    - name: Create lab user and directory
       user:
         name: user
         shell: /bin/bash
         create_home: yes
-
+    
     - name: Create lab directory
       file:
         path: /home/user/lab
         state: directory
         owner: user
         group: user
+        mode: '0755'
 
-    # OPTIMIZED SOLUTION: Auto update key.txt every minute
-    - name: Create flag update script (Cronjob)
+    - name: Create flag update script
       copy:
         dest: /usr/local/bin/update_flag.sh
         mode: '0755'
@@ -85,36 +74,14 @@
           if [ ! -z "$FLAG" ]; then
               echo "$FLAG" > /home/user/lab/key.txt
               chown user:user /home/user/lab/key.txt
+              chmod 644 /home/user/lab/key.txt
           fi
 
     - name: Run initial flag update
       shell: /usr/local/bin/update_flag.sh
 
-    - name: Set up Cronjob to run every minute
+    - name: Set up Cronjob to update every minute
       cron:
         name: "Update Lab Flag"
         minute: "*"
         job: "/usr/local/bin/update_flag.sh"
-
-    - name: Create submit_flag script (Supports argument or prompt)
-      copy:
-        dest: /usr/local/bin/submit_flag
-        mode: '0755'
-        content: |
-          #!/bin/bash
-          USER_FLAG=$1
-          
-          # If no argument provided, prompt for input
-          if [ -z "$USER_FLAG" ]; then
-              read -p "Enter Flag you found: " USER_FLAG
-          fi
-
-          RESPONSE=$(curl -s http://10.10.20.10:8000/verify/$USER_FLAG)
-          
-          if [[ $RESPONSE == *"correct"* ]]; then
-              PASSKEY=$(echo $RESPONSE | grep -oP '(?<="passkey":")[^"]*')
-              echo -e "\e[32m[+] Correct!\e[0m"
-              echo -e "Your completion passkey is: \e[1;33m$PASSKEY\e[0m"
-          else
-              echo -e "\e[31m[-] Wrong flag! Please check the flag or timing.\e[0m"
-          fi
