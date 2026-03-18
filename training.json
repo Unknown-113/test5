@@ -1,43 +1,36 @@
 {
   "title": "Flag Training",
   "state": "UNRELEASED",
-
   "phases": [
     {
       "title": "Access",
       "phase_type": "ACCESS",
       "order": 0,
       "passkey": "start",
-      "cloud_content": "Access sandbox",
-      "local_content": "Access sandbox"
+      "cloud_content": "Truy cập vào student-vm để bắt đầu bài Lab.\nPasskey: start",
+      "local_content": "Truy cập vào student-vm để bắt đầu bài Lab.\nPasskey: start"
     },
-
     {
       "title": "Find Flag",
       "phase_type": "TRAINING",
       "order": 1,
-
       "decision_matrix": [
         {
           "order": 0,
-          "wrong_answers": 3,
+          "wrong_answers": 10,
           "solution_displayed": 0,
           "completed_in_time": 1,
           "keyword_used": 0,
           "questionnaire_answered": 0
         }
       ],
-
       "tasks": [
         {
-          "title": "Find flag",
-          "content": "Find flag in /home/user/lab/key.txt",
+          "title": "Tìm và xác thực flag",
+          "content": "### Hướng dẫn thực hiện:\n1. Tìm flag động trong file `/home/user/lab/key.txt`.\n2. Sử dụng lệnh xác thực theo cú pháp: `submit_flag <FLAG_TIM_DUOC>`.\n3. Lấy mã **Passkey** nhận được để điền vào ô đáp án.\n\n**Ví dụ:**\nNếu nội dung file là `FLAG_a1b2c3d4`, bạn hãy chạy lệnh:\n`submit_flag FLAG_a1b2c3d4`",
           "order": 0,
-
-          "answer": "FLAG",
-
-          "solution": "cat /home/user/lab/key.txt",
-
+          "answer": "FINISH_LAB_TEST",
+          "solution": "1. Chạy lệnh: `cat /home/user/lab/key.txt` để lấy flag.\n2. Giả sử flag là `FLAG_1234abcd`, hãy thực hiện xác thực bằng lệnh:\n   `submit_flag FLAG_1234abcd` \n3. Hệ thống sẽ trả về mã: `FINISH_LAB_TEST`.\n4. Copy mã này nộp vào hệ thống để hoàn thành bài tập.",
           "modify_sandbox": false
         }
       ]
