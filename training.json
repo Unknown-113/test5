@@ -26,11 +26,11 @@
       ],
       "tasks": [
         {
-          "title": "Tìm và xác thực flag",
-          "content": "### Hướng dẫn thực hiện:\n1. Tìm flag động trong file `/home/user/lab/key.txt`.\n2. Sử dụng lệnh xác thực theo cú pháp: `submit_flag <FLAG_TIM_DUOC>`.\n3. Lấy mã **Passkey** nhận được để điền vào ô đáp án.\n\n**Ví dụ:**\nNếu nội dung file là `FLAG_a1b2c3d4`, bạn hãy chạy lệnh:\n`submit_flag FLAG_a1b2c3d4`",
+          "title": "Tìm và nộp Flag động",
+          "content": "### Hướng dẫn thực hiện:\n1. Tìm flag động trong file `/home/user/lab/key.txt`.\n2. Copy mã Flag tìm được và dán trực tiếp vào ô đáp án bên dưới.\n\n**Lưu ý quan trọng:**\n- Flag này được thay đổi tự động sau mỗi **60 giây**.\n- Bạn cần nộp Flag ngay sau khi lấy được từ máy ảo để tránh bị hết hạn.",
           "order": 0,
-          "answer": "FINISH_LAB_TEST",
-          "solution": "1. Chạy lệnh: `cat /home/user/lab/key.txt` để lấy flag.\n2. Giả sử flag là `FLAG_1234abcd`, hãy thực hiện xác thực bằng lệnh:\n   `submit_flag FLAG_1234abcd` \n3. Hệ thống sẽ trả về mã: `FINISH_LAB_TEST`.\n4. Copy mã này nộp vào hệ thống để hoàn thành bài tập.",
+          "answer": "DYNAMIC_FLAG_PLACEHOLDER",
+          "solution": "1. Sử dụng lệnh: `cat /home/user/lab/key.txt` để lấy flag hiện tại.\n2. Copy chuỗi có định dạng `FLAG_xxxxxxxx`.\n3. Dán trực tiếp chuỗi này vào ô đáp án và nhấn Submit.\n*Lưu ý: Nếu hệ thống báo sai, hãy kiểm tra lại nội dung file key.txt vì có thể flag đã vừa được cập nhật mới.*",
           "modify_sandbox": false
         }
       ]
