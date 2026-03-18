@@ -1,0 +1,46 @@
+{
+  "title": "Flag Training",
+  "state": "UNRELEASED",
+
+  "phases": [
+    {
+      "title": "Access",
+      "phase_type": "ACCESS",
+      "order": 0,
+      "passkey": "start",
+      "cloud_content": "Access sandbox",
+      "local_content": "Access sandbox"
+    },
+
+    {
+      "title": "Find Flag",
+      "phase_type": "TRAINING",
+      "order": 1,
+
+      "decision_matrix": [
+        {
+          "order": 0,
+          "wrong_answers": 3,
+          "solution_displayed": 0,
+          "completed_in_time": 1,
+          "keyword_used": 0,
+          "questionnaire_answered": 0
+        }
+      ],
+
+      "tasks": [
+        {
+          "title": "Find flag",
+          "content": "Find flag in /home/user/lab/key.txt",
+          "order": 0,
+
+          "answer": "FLAG",
+
+          "solution": "cat /home/user/lab/key.txt",
+
+          "modify_sandbox": false
+        }
+      ]
+    }
+  ]
+}
