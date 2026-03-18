@@ -21,7 +21,7 @@
 
           app = Flask(__name__)
           SECRET = "kypo-secret-key"
-          STATIC_PASSKEY = "FINISH_LAB_99"
+          STATIC_PASSKEY = "FINISH_LAB_TEST"
 
           def generate_valid_flags():
               # Cho phép flag hiện tại và flag của 1 phút trước (tránh lệch giây)
